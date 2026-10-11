@@ -1,28 +1,25 @@
-// components/superadmin/SystemDocumentOverview.tsx
+// components/super_admin/SuperAdminDocumentOverview.tsx
 
 import type { ApexOptions } from "apexcharts";
-import { useState } from "react";
+import clsx from "clsx";
+import { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import { MoreDotIcon } from "../../icons";
+import DashboardCard from "../dashboard/DashboardCard";
+import { CHART_AXIS_LABEL, CHART_FONT, CHART_GRID } from "../dashboard/chartTheme";
+import { useChartMounted } from "../dashboard/useChartMounted";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
 interface OverviewStat {
   label: string;
   value: number;
-  color: string;
   icon: React.ReactNode;
 }
 
 function TotalIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -33,13 +30,7 @@ function TotalIcon({ className }: { className?: string }) {
 }
 function InboxIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -50,30 +41,14 @@ function InboxIcon({ className }: { className?: string }) {
 }
 function OutboxIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-      />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
     </svg>
   );
 }
 function ArchiveIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -84,149 +59,109 @@ function ArchiveIcon({ className }: { className?: string }) {
 }
 
 const stats: OverviewStat[] = [
-  {
-    label: "Total Documents",
-    value: 3840,
-    color: "var(--color-primary)",
-    icon: <TotalIcon className="size-5 text-primary dark:text-secondary" />,
-  },
-  {
-    label: "Incoming",
-    value: 2100,
-    color: "var(--color-success)",
-    icon: <InboxIcon className="size-5 text-success" />,
-  },
-  {
-    label: "Outgoing",
-    value: 1200,
-    color: "var(--color-secondary)",
-    icon: <OutboxIcon className="size-5 text-secondary" />,
-  },
-  {
-    label: "Archived",
-    value: 540,
-    color: "var(--color-gray-400)",
-    icon: <ArchiveIcon className="size-5 text-gray-400" />,
-  },
+  { label: "Total Documents", value: 3840, icon: <TotalIcon className="size-5" /> },
+  { label: "Incoming", value: 2100, icon: <InboxIcon className="size-5" /> },
+  { label: "Outgoing", value: 1200, icon: <OutboxIcon className="size-5" /> },
+  { label: "Archived", value: 540, icon: <ArchiveIcon className="size-5" /> },
 ];
 
-export default function SystemDocumentOverview() {
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+const SERIES = [
+  { name: "Total", data: [280, 310, 290, 340, 360, 400, 380, 420, 450, 500, 480, 530] },
+  { name: "Incoming", data: [160, 175, 160, 190, 200, 220, 210, 240, 260, 290, 270, 300] },
+  { name: "Outgoing", data: [80, 95, 90, 105, 115, 130, 125, 140, 150, 165, 160, 175] },
+];
+
+export default function SystemDocumentOverview({ fill = false }: { fill?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const mounted = useChartMounted();
 
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  const options: ApexOptions = {
-    legend: { show: false },
-    colors: ["var(--color-primary)", "var(--color-success)", "var(--color-secondary)"],
-    chart: {
-      fontFamily: "Outfit, sans-serif",
-      height: 260,
-      type: "area",
-      toolbar: { show: false },
-    },
-    stroke: { curve: "smooth", width: [2, 2, 2] },
-    fill: {
-      type: "gradient",
-      gradient: { opacityFrom: 0.45, opacityTo: 0 },
-    },
-    markers: { size: 0, hover: { size: 5 } },
-    dataLabels: { enabled: false },
-    grid: {
-      xaxis: { lines: { show: false } },
-      yaxis: { lines: { show: true } },
-      borderColor: "var(--color-gray-100)",
-    },
-    xaxis: {
-      type: "category",
-      categories: months,
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      labels: {
-        style: { fontSize: "11px", colors: Array(12).fill("var(--color-gray-400)") },
+  const options = useMemo<ApexOptions>(
+    () => ({
+      legend: { show: false },
+      colors: ["var(--color-primary)", "var(--color-success)", "var(--color-secondary)"],
+      chart: {
+        fontFamily: CHART_FONT,
+        height: fill ? "100%" : 260,
+        type: "area",
+        toolbar: { show: false },
+        animations: {
+          enabled: true,
+          easing: "easeinout",
+          speed: 800,
+          animateGradually: { enabled: true, delay: 120 },
+          dynamicAnimation: { enabled: true, speed: 350 },
+        },
       },
-    },
-    yaxis: {
-      labels: { style: { fontSize: "11px", colors: ["var(--color-gray-400)"] } },
-    },
-    tooltip: { x: { show: true } },
-  };
-
-  const series = [
-    {
-      name: "Total",
-      data: [280, 310, 290, 340, 360, 400, 380, 420, 450, 500, 480, 530],
-    },
-    {
-      name: "Incoming",
-      data: [160, 175, 160, 190, 200, 220, 210, 240, 260, 290, 270, 300],
-    },
-    {
-      name: "Outgoing",
-      data: [80, 95, 90, 105, 115, 130, 125, 140, 150, 165, 160, 175],
-    },
-  ];
+      stroke: { curve: "smooth", width: [2, 2, 2] },
+      fill: { type: "gradient", gradient: { opacityFrom: 0.45, opacityTo: 0 } },
+      markers: { size: 0, hover: { size: 5 } },
+      dataLabels: { enabled: false },
+      grid: {
+        xaxis: { lines: { show: false } },
+        yaxis: { lines: { show: true } },
+        borderColor: CHART_GRID,
+      },
+      xaxis: {
+        type: "category",
+        categories: MONTHS,
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        labels: { style: { fontSize: "11px", colors: Array(12).fill(CHART_AXIS_LABEL) } },
+      },
+      yaxis: { labels: { style: { fontSize: "11px", colors: [CHART_AXIS_LABEL] } } },
+      tooltip: { x: { show: true } },
+    }),
+    [fill],
+  );
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            System Document Overview
-          </h3>
-          <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            High-level document flow across the entire system
-          </p>
-        </div>
+    <DashboardCard
+      className={fill ? "flex min-h-0 flex-1 flex-col" : undefined}
+      bodyClassName={fill ? "flex min-h-0 flex-1 flex-col" : undefined}
+      title="System Document Overview"
+      desc="High-level document flow across the entire system"
+      headerRight={
         <div className="relative inline-block">
           <button className="dropdown-toggle" onClick={() => setIsOpen((v) => !v)}>
-            <MoreDotIcon className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 size-6" />
+            <MoreDotIcon className="size-6 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
           </button>
           <Dropdown isOpen={isOpen} onClose={() => setIsOpen(false)} className="w-40 p-2">
             <DropdownItem
               onItemClick={() => setIsOpen(false)}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+              className="flex w-full rounded-lg text-left font-normal text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               Export CSV
             </DropdownItem>
             <DropdownItem
               onItemClick={() => setIsOpen(false)}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+              className="flex w-full rounded-lg text-left font-normal text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
             >
               View Report
             </DropdownItem>
           </Dropdown>
         </div>
-      </div>
-
+      }
+    >
       {/* Stat pills row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-5">
+      <div className="mb-5 grid flex-shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
           <div
             key={s.label}
-            className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-white/[0.03]"
+            className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3 ring-1 ring-gray-100 dark:bg-white/[0.03] dark:ring-white/[0.06]"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white dark:bg-white/[0.05] flex-shrink-0">
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-white text-primary dark:bg-white/[0.05] dark:text-secondary">
               {s.icon}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold text-gray-800 dark:text-white/90 leading-none">
+            <div className="min-w-0 flex-1">
+              <p className="text-lg leading-none font-bold text-gray-800 dark:text-white/90">
                 {s.value.toLocaleString()}
               </p>
-              <p className="text-theme-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+              <p className="mt-0.5 truncate text-theme-xs text-gray-400 dark:text-gray-500">
                 {s.label}
               </p>
             </div>
@@ -235,27 +170,38 @@ export default function SystemDocumentOverview() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-5 mb-3">
+      <div className="mb-3 flex flex-shrink-0 items-center gap-5">
         {[
           { label: "Total", color: "var(--color-primary)" },
           { label: "Incoming", color: "var(--color-success)" },
           { label: "Outgoing", color: "var(--color-secondary)" },
         ].map((l) => (
           <div key={l.label} className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }} />
-            <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {l.label}
-            </span>
+            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: l.color }} />
+            <span className="text-theme-xs text-gray-500 dark:text-gray-400">{l.label}</span>
           </div>
         ))}
       </div>
 
       {/* Chart */}
-      <div className="max-w-full overflow-x-auto custom-scrollbar">
-        <div className="min-w-[600px] xl:min-w-full">
-          <Chart options={options} series={series} type="area" height={260} />
+      <div
+        className={clsx(
+          "max-w-full overflow-x-auto no-scrollbar",
+          fill ? "min-h-0 flex-1" : "min-h-[260px]",
+        )}
+      >
+        <div className="h-full min-w-[600px] xl:min-w-full">
+          {mounted && (
+            <Chart
+              key="chart"
+              options={options}
+              series={SERIES}
+              type="area"
+              height={fill ? "100%" : 260}
+            />
+          )}
         </div>
       </div>
-    </div>
+    </DashboardCard>
   );
 }

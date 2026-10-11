@@ -1,6 +1,8 @@
+import type { MetricTone } from "../dashboard/tone";
+import MetricCard from "../dashboard/MetricCard";
 import type { StatusType } from "../ui/modal/document/StatusUpdateModal";
 
-// ── Icons ────────────────────────────────────────────────────────────
+// ── Icons (inherit color from the MetricCard tone chip) ──────────────
 
 function DocumentIcon({ className }: { className?: string }) {
   return (
@@ -92,8 +94,7 @@ interface MetricDef {
   label: string;
   value: number;
   icon: React.ReactNode;
-  iconBg: string;
-  ringClass: string;
+  tone: MetricTone;
 }
 
 // ── Component ─────────────────────────────────────────────────────────
@@ -111,33 +112,29 @@ export default function IncomingStatusMetrics({
       key: "All",
       label: "Total Assigned",
       value: total,
-      icon: <DocumentIcon className="text-[#3b82f6] size-6" />,
-      iconBg: "bg-[#e0e7ff]",
-      ringClass: "ring-primary",
+      icon: <DocumentIcon className="size-6" />,
+      tone: "primary",
     },
     {
       key: "Completed",
       label: "Completed",
       value: completed,
-      icon: <CheckCircleIcon className="text-[#10b981] size-6" />,
-      iconBg: "bg-[#d1fae5]",
-      ringClass: "ring-success",
+      icon: <CheckCircleIcon className="size-6" />,
+      tone: "success",
     },
     {
       key: "On-Going",
       label: "On-Going",
       value: onGoing,
-      icon: <ClockIcon className="text-[#0284c7] size-6" />,
-      iconBg: "bg-[#e0f2fe]",
-      ringClass: "ring-primary",
+      icon: <ClockIcon className="size-6" />,
+      tone: "info",
     },
     {
       key: "Pending",
       label: "Pending",
       value: pending,
-      icon: <AlertIcon className="text-[#ef4444] size-6" />,
-      iconBg: "bg-[#fee2e2]",
-      ringClass: "ring-danger",
+      icon: <AlertIcon className="size-6" />,
+      tone: "danger",
     },
   ];
 
@@ -147,38 +144,17 @@ export default function IncomingStatusMetrics({
 
   return (
     <div className="grid grid-cols-2 gap-4 md:gap-6 xl:grid-cols-4">
-      {metrics.map((m) => {
-        const isActive = activeStatus === m.key;
-        return (
-          <button
-            key={m.key}
-            type="button"
-            aria-pressed={isActive}
-            onClick={() => handleClick(m.key)}
-            className={`rounded-2xl border border-[#fee8d6] bg-[#fffaf5] p-5 text-left transition-all md:p-6 dark:border-gray-800 dark:bg-white/[0.03] ${
-              isActive
-                ? "bg-gray-50 shadow-sm dark:bg-white/[0.06]"
-                : "hover:border-gray-300 dark:hover:border-gray-700"
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div
-                className={`flex h-12 w-12 items-center justify-center rounded-xl ${m.iconBg}`}
-              >
-                {m.icon}
-              </div>
-              <div className="flex-1">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {m.label}
-                </span>
-                <h4 className="text-title-sm mt-2 font-bold text-gray-800 dark:text-white/90">
-                  {m.value.toLocaleString()}
-                </h4>
-              </div>
-            </div>
-          </button>
-        );
-      })}
+      {metrics.map((m) => (
+        <MetricCard
+          key={m.key}
+          label={m.label}
+          value={m.value}
+          icon={m.icon}
+          tone={m.tone}
+          active={activeStatus === m.key}
+          onClick={() => handleClick(m.key)}
+        />
+      ))}
     </div>
   );
 }
