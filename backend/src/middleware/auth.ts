@@ -8,6 +8,16 @@ import { Reflector } from "@nestjs/core";
 import { AuthGuard } from "@nestjs/passport";
 import { IS_PUBLIC_KEY } from "../auth/authentication/decorators/public.decorator";
 
+const API_PREFIXES = [
+  "authentication",
+  "user-permissions",
+  "user",
+  "division",
+  "extraction",
+  "extracted-document-queue",
+  "outgoing-documents",
+];
+
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
   constructor(@Inject(Reflector) private reflector: Reflector) {
@@ -15,12 +25,20 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
   }
 
   canActivate(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest();
+    const isStaticRequest =
+      (request.method === "GET" || request.method === "HEAD") &&
+      !API_PREFIXES.some(
+        (prefix) =>
+          request.path === `/${prefix}` || request.path.startsWith(`/${prefix}/`),
+      );
+
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (isPublic) {
+    if (isPublic || isStaticRequest) {
       return true;
     }
 
