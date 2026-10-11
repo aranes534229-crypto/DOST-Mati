@@ -1,10 +1,13 @@
 // components/admin/AnalyticsSection.tsx
 
 import type { ApexOptions } from "apexcharts";
-import { useState } from "react";
+import clsx from "clsx";
+import { useEffect, useState, type ReactNode } from "react";
 import Chart from "react-apexcharts";
 import { useNavigate } from "react-router";
 import { ArrowRightIcon } from "../../icons";
+import DashboardCard from "../dashboard/DashboardCard";
+import { CHART_FONT, CHART_MUTED } from "../dashboard/chartTheme";
 
 // ── Mock data (shared across tabs) ────────────────────────────────────────────
 const statusData = [
@@ -15,14 +18,14 @@ const statusData = [
 const statusTotal = statusData.reduce((a, d) => a + d.count, 0);
 
 const flow = [
-  { label: "Incoming", value: 800, color: "text-[#3b82f6]", bg: "bg-[#e0e7ff]" },
-  { label: "Outgoing", value: 450, color: "text-[#0284c7]", bg: "bg-[#e0f2fe]" },
+  { label: "Incoming", value: 800, to: "/incoming", color: "text-blue-light-600 dark:text-blue-light-400", bg: "bg-blue-light-100 dark:bg-blue-light-500/10" },
+  { label: "Outgoing", value: 450, to: "/outgoing", color: "text-secondary", bg: "bg-secondary/10" },
 ];
 
 interface Division {
   name: string;
   count: number;
-  color: string;
+  dotColor: string;
 }
 const divisions: Division[] = [
   { name: "Roads Division", count: 30, dotColor: "var(--color-primary)" },
@@ -36,28 +39,20 @@ const queueStats = [
   {
     label: "Pending Extraction",
     value: 20,
-    sub: "awaiting processing",
-    color: "text-[#f59e0b]",
-    bg: "bg-[#fef3c7]",
+    color: "text-warning",
+    bg: "bg-warning/10",
   },
   {
     label: "Routed Today",
     value: 50,
-    sub: "sent to recipients",
-    color: "text-[#10b981]",
-    bg: "bg-[#d1fae5]",
+    color: "text-success",
+    bg: "bg-success/10",
   },
 ];
 
 function BuildingIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -69,31 +64,15 @@ function BuildingIcon({ className }: { className?: string }) {
 
 function UploadIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 16V4m0 0L7 9m5-5l5 5M5 20h14"
-      />
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L7 9m5-5l5 5M5 20h14" />
     </svg>
   );
 }
 
 function RouteIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -101,6 +80,58 @@ function RouteIcon({ className }: { className?: string }) {
       />
     </svg>
   );
+}
+
+// ── Shared interactive tile (Incoming/Outgoing + queue stats) ──────────────────
+interface StatTileProps {
+  label: string;
+  value: number;
+  color: string;
+  bg: string;
+  icon: ReactNode;
+  /** When provided the tile becomes a button (with a trailing chevron). */
+  onClick?: () => void;
+}
+
+function StatTile({ label, value, color, bg, icon, onClick }: StatTileProps) {
+  const className = clsx(
+    "group/tile flex items-center gap-4 rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-100 transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-theme-sm hover:ring-gray-200 motion-reduce:transition-none dark:bg-white/[0.03] dark:ring-white/[0.06] dark:hover:ring-white/[0.12]",
+    onClick &&
+      "w-full cursor-pointer text-left hover:ring-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+  );
+
+  const inner = (
+    <>
+      <div
+        className={clsx(
+          "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-transform duration-300 ease-out group-hover/tile:scale-105 motion-reduce:transition-none motion-reduce:group-hover/tile:scale-100",
+          bg,
+          color,
+        )}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-theme-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
+          {label}
+        </p>
+        <p className={clsx("mt-0.5 text-2xl font-bold", color)}>{value}</p>
+      </div>
+      {onClick && (
+        <ArrowRightIcon className="ml-auto size-4 flex-shrink-0 text-gray-300 transition duration-300 ease-out group-hover/tile:translate-x-0.5 group-hover/tile:text-gray-500 motion-reduce:transition-none motion-reduce:group-hover/tile:translate-x-0 dark:text-gray-600 dark:group-hover/tile:text-gray-300" />
+      )}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} aria-label={`View ${label} documents`} className={className}>
+        {inner}
+      </button>
+    );
+  }
+
+  return <div className={className}>{inner}</div>;
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -111,51 +142,49 @@ export default function AnalyticsSection() {
   const [tab, setTab] = useState<Tab>("Overview");
   const navigate = useNavigate();
 
-  return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Analytics
-          </h3>
-          <p className="text-theme-sm mt-1 text-gray-500 dark:text-gray-400">
-            Status, division workload &amp; upload flow
-          </p>
-        </div>
-        {/* Tab switcher */}
-        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-white/[0.05] dark:bg-white/[0.02]">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-md px-3 py-1.5 text-theme-sm font-medium transition ${
-                tab === t
-                  ? "bg-white text-secondary shadow-theme-xs dark:bg-white/10 dark:text-white"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      </div>
+  const tabSwitcher = (
+    <div className="inline-flex rounded-full bg-gray-100/80 p-1 dark:bg-white/[0.04]">
+      {TABS.map((t) => (
+        <button
+          key={t}
+          onClick={() => setTab(t)}
+          aria-pressed={tab === t}
+          className={`rounded-full px-3 py-1.5 text-theme-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+            tab === t
+              ? "bg-white text-secondary shadow-theme-xs dark:bg-white/10 dark:text-white"
+              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          }`}
+        >
+          {t}
+        </button>
+      ))}
+    </div>
+  );
 
+  return (
+    <DashboardCard
+      title="Analytics"
+      desc="Status, division workload & upload flow"
+      headerRight={tabSwitcher}
+      className="h-full"
+    >
       {tab === "Overview" && <OverviewTab />}
       {tab === "Divisions" && <DivisionsTab />}
       {tab === "Uploads" && <UploadsTab onViewQueue={() => navigate("/upload-queue")} />}
-    </section>
+    </DashboardCard>
   );
 }
 
 // ── Overview: donut + Incoming/Outgoing ───────────────────────────────────────
 function OverviewTab() {
+  const navigate = useNavigate();
   const series = statusData.map((d) => d.count);
   const colors = statusData.map((d) => d.color);
   const labels = statusData.map((d) => d.label);
 
   const options: ApexOptions = {
     chart: {
-      fontFamily: "Outfit, sans-serif",
+      fontFamily: CHART_FONT,
       type: "donut",
       height: 240,
       toolbar: { show: false },
@@ -176,7 +205,7 @@ function OverviewTab() {
               label: "Total",
               fontSize: "13px",
               fontWeight: 500,
-              color: "var(--color-gray-400)",
+              color: CHART_MUTED,
               formatter: () => `${statusTotal.toLocaleString()}`,
             },
             value: {
@@ -198,25 +227,20 @@ function OverviewTab() {
       {/* Donut + legend */}
       <div>
         <div className="flex items-center justify-center">
-          <Chart
-            options={options}
-            series={series}
-            type="donut"
-            height={240}
-            width="100%"
-          />
+          <Chart options={options} series={series} type="donut" height={240} width="100%" />
         </div>
-        <div className="mt-4 space-y-2.5 border-t border-gray-100 pt-4 dark:border-white/[0.05]">
+        <div className="mt-4 space-y-1.5 border-t border-gray-100 pt-4 dark:border-white/[0.05]">
           {statusData.map((d) => (
-            <div key={d.label} className="flex items-center justify-between">
+            <div
+              key={d.label}
+              className="-mx-2 flex items-center justify-between rounded-lg px-2 py-1.5 transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+            >
               <div className="flex items-center gap-2.5">
                 <span
-                  className="block h-3 w-3 rounded-full flex-shrink-0"
+                  className="block h-3 w-3 flex-shrink-0 rounded-full"
                   style={{ backgroundColor: d.color }}
                 />
-                <span className="text-theme-sm text-gray-600 dark:text-gray-300">
-                  {d.label}
-                </span>
+                <span className="text-theme-sm text-gray-600 dark:text-gray-300">{d.label}</span>
               </div>
               <span className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
                 {d.count}
@@ -228,54 +252,31 @@ function OverviewTab() {
 
       {/* Incoming / Outgoing — tucked inside the chart instead of their own cards */}
       <div className="flex flex-col justify-center gap-4">
-        <p className="text-theme-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+        <p className="text-theme-xs font-medium tracking-wide text-gray-400 uppercase dark:text-gray-500">
           Document Flow
         </p>
         {flow.map((f) => (
-          <div
+          <StatTile
             key={f.label}
-            className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-white/[0.05] dark:bg-white/[0.03]"
-          >
-            <div
-              className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${f.bg}`}
-            >
-              {f.label === "Incoming" ? (
-                <svg
-                  className={`size-5 ${f.color}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 8v8m0-8l-4 4m4-4l4 4M5 20h14"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className={`size-5 ${f.color}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 16V8m0 8l-4-4m4 4l4-4M5 4h14"
-                  />
-                </svg>
-              )}
-            </div>
-            <div className="flex-1">
-              <p className="text-theme-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                {f.label}
-              </p>
-              <p className={`mt-0.5 text-2xl font-bold ${f.color}`}>{f.value}</p>
-            </div>
-          </div>
+            label={f.label}
+            value={f.value}
+            color={f.color}
+            bg={f.bg}
+            onClick={() => navigate(f.to)}
+            icon={
+              <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d={
+                    f.label === "Incoming"
+                      ? "M12 8v8m0-8l-4 4m4-4l4 4M5 20h14"
+                      : "M12 16V8m0 8l-4-4m4 4l4-4M5 4h14"
+                  }
+                />
+              </svg>
+            }
+          />
         ))}
       </div>
     </div>
@@ -287,28 +288,36 @@ function DivisionsTab() {
   const max = Math.max(...divisions.map((d) => d.count));
   const total = divisions.reduce((a, d) => a + d.count, 0);
 
+  // Grow the bars from 0 on tab open (rAF so the initial 0% actually paints).
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <div>
-      <div className="mb-5 flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/5 p-3.5 dark:border-secondary/10 dark:bg-secondary/5">
+      <div className="mb-5 flex items-center gap-3 rounded-2xl bg-primary/5 p-3.5 ring-1 ring-primary/10 dark:bg-secondary/5 dark:ring-secondary/10">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 dark:bg-secondary/10">
           <BuildingIcon className="size-5 text-primary dark:text-secondary" />
         </div>
         <div>
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-            Total assigned documents
-          </p>
+          <p className="text-theme-xs text-gray-500 dark:text-gray-400">Total assigned documents</p>
           <p className="text-lg font-bold text-gray-800 dark:text-white/90">{total}</p>
         </div>
       </div>
-      <div className="space-y-4">
-        {divisions.map((div) => {
+      <div className="space-y-3">
+        {divisions.map((div, i) => {
           const percent = Math.round((div.count / max) * 100);
           return (
-            <div key={div.name} className="space-y-1.5">
+            <div
+              key={div.name}
+              className="-mx-2 space-y-1.5 rounded-lg px-2 py-1.5 transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span
-                    className="block h-2.5 w-2.5 rounded-full flex-shrink-0"
+                    className="block h-2.5 w-2.5 flex-shrink-0 rounded-full"
                     style={{ backgroundColor: div.dotColor }}
                   />
                   <span className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
@@ -321,10 +330,11 @@ function DivisionsTab() {
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/[0.06]">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full transition-[width] duration-700 ease-out motion-reduce:transition-none"
                   style={{
-                    width: `${percent}%`,
-                    backgroundColor: "var(--color-primary)",
+                    width: `${ready ? percent : 0}%`,
+                    backgroundColor: div.dotColor,
+                    transitionDelay: `${i * 60}ms`,
                   }}
                 />
               </div>
@@ -342,34 +352,29 @@ function UploadsTab({ onViewQueue }: { onViewQueue: () => void }) {
     <div>
       <div className="grid grid-cols-2 gap-3">
         {queueStats.map((s) => (
-          <div
+          <StatTile
             key={s.label}
-            className="flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-white/[0.05] dark:bg-white/[0.03]"
-          >
-            <div
-              className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${s.bg}`}
-            >
-              {s.label === "Pending Extraction" ? (
-                <UploadIcon className={`size-5 ${s.color}`} />
+            label={s.label}
+            value={s.value}
+            color={s.color}
+            bg={s.bg}
+            icon={
+              s.label === "Pending Extraction" ? (
+                <UploadIcon className="size-5" />
               ) : (
-                <RouteIcon className={`size-5 ${s.color}`} />
-              )}
-            </div>
-            <div>
-              <p className="text-theme-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                {s.label}
-              </p>
-              <p className={`mt-0.5 text-2xl font-bold ${s.color}`}>{s.value}</p>
-            </div>
-          </div>
+                <RouteIcon className="size-5" />
+              )
+            }
+          />
         ))}
       </div>
 
       <button
         onClick={onViewQueue}
-        className="text-theme-sm mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#e2e8f0] py-2.5 font-medium text-[#475569] transition-colors hover:bg-gray-50 dark:border-white/[0.05] dark:text-gray-300 dark:hover:bg-white/[0.03]"
+        className="group mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-2xl py-2.5 text-theme-sm font-medium text-gray-600 ring-1 ring-gray-200 transition duration-300 hover:bg-gray-50 hover:ring-gray-300 hover:shadow-theme-xs dark:text-gray-300 dark:ring-white/[0.06] dark:hover:bg-white/[0.03] dark:hover:ring-white/[0.12]"
       >
-        View Queue <ArrowRightIcon className="size-4" />
+        View Queue
+        <ArrowRightIcon className="size-4 transition-transform duration-300 ease-out group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
       </button>
     </div>
   );

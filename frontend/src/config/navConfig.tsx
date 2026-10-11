@@ -71,7 +71,11 @@ const RECEIVER_ROUTES: NavItem[] = [
 const DIVISION_ROUTES: NavItem[] = [
   {
     name: "Assigned Documents",
+<<<<<<< HEAD
     path: "/division/assigned-documents",
+=======
+    path: "/division/dashboard",
+>>>>>>> origin/dashboard-fix-ui
     icon: <AssignedDocumentsIcon />,
     roles: [4],
   },

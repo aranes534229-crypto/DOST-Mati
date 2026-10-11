@@ -1,29 +1,10 @@
-// components/admin/NeedsAttentionStrip.tsx
+// components/dashboard/NeedsAttention.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { getRoleDashboardConfig, type AttentionItem } from "../../config/roleDashboardConfig";
 import { useUser } from "../../context/currentUser/use-user";
 import { AlertIcon, ArrowRightIcon } from "../../icons";
-
-interface AttentionItem {
-  label: string;
-  value: number;
-  to: string;
-  // "alert": something is going wrong and needs a response (stale, invalid).
-  // "indicator": a quiet status count, no action required yet (pending).
-  // Distinction follows NN/g's notification taxonomy — treating both the
-  // same way trains users to tune out the strip entirely (alert fatigue).
-  tier: "alert" | "indicator";
-}
-
-const adminItems: AttentionItem[] = [
-  { label: "Stale Documents", value: 2, to: "/admin/stale-documents", tier: "alert" },
-  { label: "Invalid Documents", value: 6, to: "/upload-invalid", tier: "alert" },
-  { label: "Pending Documents", value: 120, to: "/upload-queue", tier: "indicator" },
-];
-
-const receiverItems: AttentionItem[] = [
-  { label: "Invalid Documents", value: 3, to: "/rejected-documents", tier: "alert" },
-];
+import { STRIP_RADIUS } from "./styleMaps";
 
 function CloseIcon({ className }: { className?: string }) {
   return (
@@ -57,10 +38,15 @@ function AlertDangerIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Role-aware attention strip. Items come from `roleDashboardConfig`, so every
+ * role (including super admin and division) shows its own counts instead of
+ * falling through to the admin set.
+ */
 export default function NeedsAttentionStrip() {
   const { currentUser } = useUser();
-  const role = currentUser?.role_id;
-  const items = role === 3 ? receiverItems : adminItems;
+  const config = getRoleDashboardConfig(currentUser?.role_id);
+  const items: AttentionItem[] = config.attentionItems;
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
 
@@ -71,20 +57,16 @@ export default function NeedsAttentionStrip() {
   const indicators = visibleItems.filter((i) => i.tier === "indicator");
   const hasAlerts = alerts.length > 0;
 
-  // Strip-level framing only escalates when a real alert is present.
-  // A pending-only queue gets a quiet neutral strip, not a warning-colored one.
   const stripBg = hasAlerts ? "bg-danger/[0.04]" : "bg-gray-50";
   const stripBorder = hasAlerts ? "border-danger/20" : "border-gray-200";
   const stripBgDark = hasAlerts ? "dark:bg-danger/[0.04]" : "dark:bg-white/[0.02]";
-  const stripBorderDark = hasAlerts
-    ? "dark:border-danger/20"
-    : "dark:border-white/[0.05]";
+  const stripBorderDark = hasAlerts ? "dark:border-danger/20" : "dark:border-white/[0.05]";
   const iconBg = hasAlerts ? "bg-danger/10" : "bg-gray-200/60 dark:bg-white/[0.06]";
   const IconComponent = hasAlerts ? AlertDangerIcon : AlertIcon;
 
   return (
     <div
-      className={`flex items-center gap-3 overflow-x-auto rounded-xl border ${stripBorder} ${stripBg} px-3 py-2.5 ${stripBgDark} ${stripBorderDark}`}
+      className={`flex items-center gap-3 overflow-x-auto border ${STRIP_RADIUS} ${stripBorder} ${stripBg} px-3 py-2.5 ${stripBgDark} ${stripBorderDark}`}
     >
       <span
         className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${iconBg}`}
@@ -93,7 +75,6 @@ export default function NeedsAttentionStrip() {
       </span>
 
       <div className="flex flex-1 items-center gap-2 overflow-x-auto">
-        {/* Alerts: solid pill, bold count, danger-toned — demands a look. */}
         {alerts.map((item) => (
           <button
             key={item.label}
@@ -109,7 +90,6 @@ export default function NeedsAttentionStrip() {
           </button>
         ))}
 
-        {/* Indicators: quieter outline chip, no dot, muted count — visible but not urgent. */}
         {indicators.map((item) => (
           <button
             key={item.label}

@@ -15,7 +15,7 @@
  *        role 1 (super_admin)  → /super-admin/dashboard
  *        role 2 (admin)        → /admin/dashboard
  *        role 3 (receiver)     → /receiving-officer/dashboard
- *        role 4 (division)     → /division/assigned-documents
+ *        role 4 (division)     → /division/dashboard
  *
  * We assert the destination pathname via the catch-all <LocationDisplay>
  * because <Navigate> does not render page content.
@@ -61,9 +61,12 @@ describe("DashboardRedirect", () => {
     [1, "/super-admin/dashboard"],
     [2, "/admin/dashboard"],
     [3, "/receiving-officer/dashboard"],
-    [4, "/division/assigned-documents"],
+    [4, "/division/dashboard"],
   ])("routes role %i to %s", (role, destination) => {
-    mockUseUser.mockReturnValue({ currentUser: userWith(role), isLoading: false });
+    mockUseUser.mockReturnValue({
+      currentUser: userWith(role as 1 | 2 | 3 | 4),
+      isLoading: false,
+    });
 
     renderRoutes(<Route path="/" element={<DashboardRedirect />} />, ["/"]);
 
